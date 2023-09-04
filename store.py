@@ -6,7 +6,7 @@ def store_info(info_list):
         novel_data = []
         for info in info_list:
             novel_dict = {
-                "platform": info.platform,
+                "platform": "Joara",
                 "title": info.title,
                 "info": info.info,
                 "author_id": info.author_id,
@@ -30,3 +30,11 @@ def store_info(info_list):
         count = len(info_list)
         print(f"총 {count}개의 데이터를 저장하였습니다.")
         print("store is done!")
+
+def load_info():
+    with open("Joara_novel_info.json", "r", encoding="utf-8") as f:
+        data = json.load(f)
+        pprint.pprint(data)
+        print(type(data))
+        print("load is done!")
+        return data

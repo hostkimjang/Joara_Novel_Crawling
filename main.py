@@ -1,9 +1,13 @@
 import pprint
+import requests
 import aiohttp
 import random
 import asyncio
+
+import store
 from info import set_novel_info
 from store import store_info
+from store import load_info
 import re
 import json
 
@@ -66,22 +70,43 @@ async def fetch_novel(session, url, novel_list, sem):
 
 
 async def get_novel_list(session, novel_list, end_num):
+    res = requests.get(url=f'https://api.joara.com/v1/book/list.joa?api_key=mw_8ba234e7801ba288554ca07ae44c7&ver=2.6.3&device=mw&deviceuid=*&devicetoken=mw&store=&orderby=redate&offset=20&page=1&class=', headers=headers)
+    page = res.json()
+    total_cnt = page['total_cnt']
+    #end_num = round(int(total_cnt) / 20) + 1
+    print(end_num)
     sem = asyncio.Semaphore(MAX_CONCURRENT_REQUESTS)
     tasks = []
-    count = 1
     for num in range(1, end_num):
         url = f"https://api.joara.com/v1/book/list.joa?api_key=mw_8ba234e7801ba288554ca07ae44c7&ver=2.6.3&device=mw&deviceuid=*&devicetoken=mw&store=&orderby=redate&offset=20&page={num}&class="
         tasks.append(fetch_novel(session, url, novel_list, sem))
 
     await asyncio.gather(*tasks)
 
+async def get_end_novel_list(session, novel_list, end_num):
+    res = requests.get(url=f'https://api.joara.com/v1/book/list.joa?api_key=mw_8ba234e7801ba288554ca07ae44c7&ver=2.6.3&device=mw&deviceuid=*&devicetoken=mw&store=finish&orderby=redate&offset=20&page=1', headers=headers)
+    page = res.json()
+    total_cnt = page['total_cnt']
+    #end_num = round(int(total_cnt) / 20) + 1
+    print(end_num)
+    sem = asyncio.Semaphore(MAX_CONCURRENT_REQUESTS)
+    tasks = []
+    for num in range(1, end_num):
+        url = f"https://api.joara.com/v1/book/list.joa?api_key=mw_8ba234e7801ba288554ca07ae44c7&ver=2.6.3&device=mw&deviceuid=*&devicetoken=mw&store=finish&orderby=redate&offset=20&page={num}"
+        tasks.append(fetch_novel(session, url, novel_list, sem))
+
+    await asyncio.gather(*tasks)
+
 
 async def main_async():
-    end_num = 1000
+    end_num = 5
     novel_list = []
+    #novel_list = load_info()
+    #print(type(novel_list))
 
     async with aiohttp.ClientSession() as session:
-        await get_novel_list(session, novel_list, end_num)
+        await get_end_novel_list(session, novel_list, end_num)
+        #await get_novel_list(session, novel_list, end_num)
 
     # 이후 novel_list를 저장하거나 처리할 수 있음
     store_info(novel_list)
